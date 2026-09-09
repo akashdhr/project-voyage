@@ -14,36 +14,32 @@
 Voyage is powered by a custom **LangGraph** state machine. Instead of relying on a black-box LLM chain, the agent operates in a highly controlled, cyclic workflow:
 
 ```mermaid
-stateDiagram-v2
-    direction TB
-    
-    %% Nodes
+flowchart TD
     START((START))
-    ParseRequest[Parse Request <br/> (Structured LLM)]
-    Search[Plan Search <br/> (LLM Tool Bind)]
-    ExecuteTools[Execute Tools <br/> (Tavily API)]
-    ExtractCandidates[Extract Candidates <br/> (Structured LLM)]
-    Evaluate[Evaluate Results <br/> (LLM Decision)]
-    Rank[Rank & Filter <br/> (Python Deterministic)]
-    Recommend[Recommend <br/> (LLM Generation)]
+    ParseRequest["Parse Request\n(Structured LLM)"]
+    Search["Plan Search\n(LLM Tool Bind)"]
+    ExecuteTools["Execute Tools\n(Tavily API)"]
+    ExtractCandidates["Extract Candidates\n(Structured LLM)"]
+    Evaluate["Evaluate Results\n(LLM Decision)"]
+    Rank["Rank & Filter\n(Python Deterministic)"]
+    Recommend["Recommend\n(LLM Generation)"]
     END((END))
 
-    %% Edges
-    START --> ParseRequest : User Query
-    ParseRequest --> Search : Strict JSON Pydantic Model
+    START --> ParseRequest
+    ParseRequest -- "Strict JSON Pydantic Model" --> Search
     
-    Search --> ExecuteTools : Tool Called
-    Search --> ExtractCandidates : No Tool Called
+    Search -- "Tool Called" --> ExecuteTools
+    Search -- "No Tool Called" --> ExtractCandidates
     
-    ExecuteTools --> ExtractCandidates : Web Results (HTML/Markdown)
+    ExecuteTools -- "Web Results (HTML/Markdown)" --> ExtractCandidates
     
-    ExtractCandidates --> Evaluate : Structured Flight Objects
+    ExtractCandidates -- "Structured Flight Objects" --> Evaluate
     
-    Evaluate --> Search : Needs Expansion <br/> (Feedback Added)
-    Evaluate --> Rank : Sufficient Results <br/> or Max Loops
+    Evaluate -- "Needs Expansion (Feedback Added)" --> Search
+    Evaluate -- "Sufficient Results or Max Loops" --> Rank
     
-    Rank --> Recommend : Sorted & Verified Flights
-    Recommend --> END : Final Output
+    Rank -- "Sorted & Verified Flights" --> Recommend
+    Recommend --> END
 ```
 
 ## 🧠 Design Philosophy
