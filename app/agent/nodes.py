@@ -54,8 +54,8 @@ def search_node(state: VoyageState) -> VoyageState:
     You have access to a web search tool. You may call the tool MULTIPLE TIMES in parallel to try different dates, airports, or search terms.
     
     Constraints:
-    Origin: {req.origin}
-    Destination: {req.destination}
+    Origin: {req.hard_constraints.origin}
+    Destination: {req.hard_constraints.destination}
     Flexible dates: {req.flexible_dates}
     Flexible airports: {req.flexible_origin_airports} or {req.flexible_destination_airports}
     
@@ -118,30 +118,38 @@ def evaluate_node(state: VoyageState) -> VoyageState:
     max_iters = int(os.getenv("MAX_SEARCH_ITERATIONS", "3"))
     
     if iteration >= max_iters:
-        return {"search_feedback": None} # Must stop
+        rationale = f"Decision:\nStop searching\nReason:\nMaximum search iterations ({max_iters}) reached."
+        return {"search_feedback": None, "search_rationale": rationale}
         
     llm = get_llm()
     
     class EvaluationDecision(BaseModel):
         sufficient_info: bool
-        feedback_for_next_search: str = Field(..., description="If sufficient_info is false, tell the search node exactly what to do next. E.g. 'Found nothing, search Gatwick instead' or 'Only expensive options found, try changing dates'.")
+        reasoning: str = Field(..., description="Explain why you are stopping or searching again (e.g. 'Only 2 candidates satisfy hard constraints').")
+        action: str = Field(..., description="What the next search will do (e.g. 'Expand destination airport search'). Leave empty if stopping.")
         
     structured_llm = llm.with_structured_output(EvaluationDecision)
     
     prompt = f"""
-    User wanted flights from {req.origin} to {req.destination}.
-    We have found {len(candidates)} valid flights across {iteration} iterations.
+    User wanted flights from {req.hard_constraints.origin} to {req.hard_constraints.destination}.
+    We have found {len(candidates)} flights across {iteration} iterations.
     
-    If we have 0 flights, or you suspect better options exist and the user is flexible, return sufficient_info=false and provide feedback_for_next_search.
-    If we have a good selection of flights matching constraints, return sufficient_info=true.
+    If we have 0 flights, or very few, and the user is flexible, return sufficient_info=false and state your reasoning and action.
+    If we have a good selection of flights, return sufficient_info=true and state your reasoning.
     """
     
-    decision = structured_llm.invoke([HumanMessage(content=prompt)])
+    try:
+        decision = structured_llm.invoke([HumanMessage(content=prompt)])
+    except Exception as e:
+        # Fallback if LLM fails
+        return {"search_feedback": None, "search_rationale": f"Decision:\nStop searching\nReason:\nEvaluation failed: {str(e)}"}
     
     if decision.sufficient_info:
-        return {"search_feedback": None}
+        rationale = f"Decision:\nStop searching\nReason:\n{decision.reasoning}"
+        return {"search_feedback": None, "search_rationale": rationale}
     else:
-        return {"search_feedback": decision.feedback_for_next_search}
+        rationale = f"Decision:\nSearch again\nReason:\n{decision.reasoning}\nAction:\n{decision.action}"
+        return {"search_feedback": decision.action, "search_rationale": rationale}
 
 def should_continue(state: VoyageState):
     """Conditional edge after search_node."""
@@ -164,33 +172,23 @@ def evaluate_routing(state: VoyageState):
         
     return "rank"
 
+from app.domain.logic import filter_candidates, deduplicate_candidates, rank_candidates
+
 def rank_node(state: VoyageState) -> VoyageState:
     """Deterministically filters and ranks the candidates using pure Python."""
     req = state["request"]
     candidates = state.get("candidate_flights", [])
     
-    valid_candidates = []
-    for c in candidates:
-        if req.max_stops is not None and c.stops is not None:
-            if c.stops > req.max_stops:
-                continue
-        valid_candidates.append(c)
-        
-    priced_flights = [c for c in valid_candidates if c.price is not None]
-    unpriced_flights = [c for c in valid_candidates if c.price is None]
+    # 1. Filter hard constraints
+    valid_candidates = filter_candidates(candidates, req)
     
-    priced_flights.sort(key=lambda x: x.price)
+    # 2. Deduplicate
+    deduped = deduplicate_candidates(valid_candidates)
     
-    # Deduplicate by airline + flight_number (simple approach)
-    seen = set()
-    deduped = []
-    for f in priced_flights + unpriced_flights:
-        key = f"{f.airline}-{f.flight_number}-{f.price}"
-        if key not in seen:
-            seen.add(key)
-            deduped.append(f)
+    # 3. Rank based on soft preferences
+    ranked = rank_candidates(deduped, req)
     
-    return {"candidate_flights": deduped}
+    return {"candidate_flights": ranked}
 
 def recommend_node(state: VoyageState) -> VoyageState:
     """Generates the final natural language recommendation."""
@@ -204,17 +202,22 @@ def recommend_node(state: VoyageState) -> VoyageState:
         
     best = candidates[0]
     
+    goal = req.soft_preferences.optimization_goal.upper()
+    
     prompt = f"""
     The user asked for: {req}
     
-    We ranked {len(candidates)} valid candidates. The best one is:
+    We ranked {len(candidates)} valid candidates using the {goal} strategy. The best one is:
     Airline: {best.airline}
     Price: {best.price} {best.currency}
     Stops: {best.stops}
     Duration: {best.duration_minutes} mins
     Source: {best.source_url}
+    Evidence Score: {best.evidence_score}/5
+    Verification: {best.verification_status.value}
     
-    Write a concise, friendly recommendation. Emphasize that these prices are discovered from search engines and are unverified.
+    Write a concise, friendly recommendation. State why this flight was chosen based on the {goal} strategy.
+    Emphasize that these prices are discovered from search engines and are unverified.
     """
     
     response = llm.invoke([HumanMessage(content=prompt)])

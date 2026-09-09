@@ -21,6 +21,9 @@ class VoyageState(TypedDict):
     # The final natural language recommendation
     recommendation: Optional[str]
     
+    # Rationale from the evaluator (reasoning for next step or stopping)
+    search_rationale: Optional[str]
+    
     # Feedback from the evaluator for the next search iteration
     search_feedback: Optional[str]
     

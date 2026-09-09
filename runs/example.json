@@ -1,0 +1,267 @@
+[
+  {
+    "event": "on_chain_start",
+    "name": "parse_request"
+  },
+  {
+    "event": "on_chain_end",
+    "name": "parse_request",
+    "data": {
+      "output": {
+        "request": {
+          "origin": "BLR",
+          "destination": "LHR"
+        }
+      }
+    }
+  },
+  {
+    "event": "on_chain_start",
+    "name": "search"
+  },
+  {
+    "event": "on_tool_start",
+    "name": "search_flights_tavily",
+    "data": {
+      "input": {
+        "query": "BLR London October flights checked baggage"
+      }
+    }
+  },
+  {
+    "event": "on_tool_end",
+    "name": "search_flights_tavily",
+    "data": {
+      "output": [
+        {
+          "url": "example.com"
+        }
+      ]
+    }
+  },
+  {
+    "event": "on_chain_end",
+    "name": "search"
+  },
+  {
+    "event": "on_chain_start",
+    "name": "extract_candidates"
+  },
+  {
+    "event": "on_chain_end",
+    "name": "extract_candidates",
+    "data": {
+      "output": {
+        "candidate_flights": [
+          {
+            "airline": "BA",
+            "flight_number": "118",
+            "origin_airport": "BLR",
+            "destination_airport": "LHR",
+            "departure_time": null,
+            "arrival_time": null,
+            "duration_minutes": 700,
+            "stops": 1,
+            "price": 72400.0,
+            "currency": "INR",
+            "baggage_included": true,
+            "source_name": null,
+            "source_url": null,
+            "verification_status": "UNVERIFIED"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "event": "on_chain_start",
+    "name": "evaluate"
+  },
+  {
+    "event": "on_chain_end",
+    "name": "evaluate",
+    "data": {
+      "output": {
+        "search_feedback": "Only 1 candidate found. Expanding search to LGW."
+      }
+    }
+  },
+  {
+    "event": "on_chain_start",
+    "name": "search"
+  },
+  {
+    "event": "on_tool_start",
+    "name": "search_flights_tavily",
+    "data": {
+      "input": {
+        "query": "BLR LGW October flights checked baggage"
+      }
+    }
+  },
+  {
+    "event": "on_tool_end",
+    "name": "search_flights_tavily",
+    "data": {
+      "output": [
+        {
+          "url": "example.com"
+        }
+      ]
+    }
+  },
+  {
+    "event": "on_chain_end",
+    "name": "search"
+  },
+  {
+    "event": "on_chain_start",
+    "name": "extract_candidates"
+  },
+  {
+    "event": "on_chain_end",
+    "name": "extract_candidates",
+    "data": {
+      "output": {
+        "candidate_flights": [
+          {
+            "airline": "BA",
+            "flight_number": "118",
+            "origin_airport": "BLR",
+            "destination_airport": "LHR",
+            "departure_time": null,
+            "arrival_time": null,
+            "duration_minutes": 700,
+            "stops": 1,
+            "price": 72400.0,
+            "currency": "INR",
+            "baggage_included": true,
+            "source_name": null,
+            "source_url": null,
+            "verification_status": "UNVERIFIED"
+          },
+          {
+            "airline": "EK",
+            "flight_number": "502",
+            "origin_airport": "BLR",
+            "destination_airport": "LGW",
+            "departure_time": null,
+            "arrival_time": null,
+            "duration_minutes": 730,
+            "stops": 1,
+            "price": 75200.0,
+            "currency": "INR",
+            "baggage_included": true,
+            "source_name": null,
+            "source_url": null,
+            "verification_status": "UNVERIFIED"
+          },
+          {
+            "airline": "QR",
+            "flight_number": "573",
+            "origin_airport": "BLR",
+            "destination_airport": "LHR",
+            "departure_time": null,
+            "arrival_time": null,
+            "duration_minutes": 655,
+            "stops": 2,
+            "price": 69800.0,
+            "currency": "INR",
+            "baggage_included": true,
+            "source_name": null,
+            "source_url": null,
+            "verification_status": "UNVERIFIED"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "event": "on_chain_start",
+    "name": "evaluate"
+  },
+  {
+    "event": "on_chain_end",
+    "name": "evaluate",
+    "data": {
+      "output": {
+        "search_feedback": null
+      }
+    }
+  },
+  {
+    "event": "on_chain_start",
+    "name": "rank"
+  },
+  {
+    "event": "on_chain_end",
+    "name": "rank",
+    "data": {
+      "output": {
+        "candidate_flights": [
+          {
+            "airline": "QR",
+            "flight_number": "573",
+            "origin_airport": "BLR",
+            "destination_airport": "LHR",
+            "departure_time": null,
+            "arrival_time": null,
+            "duration_minutes": 655,
+            "stops": 2,
+            "price": 69800.0,
+            "currency": "INR",
+            "baggage_included": true,
+            "source_name": null,
+            "source_url": null,
+            "verification_status": "UNVERIFIED"
+          },
+          {
+            "airline": "BA",
+            "flight_number": "118",
+            "origin_airport": "BLR",
+            "destination_airport": "LHR",
+            "departure_time": null,
+            "arrival_time": null,
+            "duration_minutes": 700,
+            "stops": 1,
+            "price": 72400.0,
+            "currency": "INR",
+            "baggage_included": true,
+            "source_name": null,
+            "source_url": null,
+            "verification_status": "UNVERIFIED"
+          },
+          {
+            "airline": "EK",
+            "flight_number": "502",
+            "origin_airport": "BLR",
+            "destination_airport": "LGW",
+            "departure_time": null,
+            "arrival_time": null,
+            "duration_minutes": 730,
+            "stops": 1,
+            "price": 75200.0,
+            "currency": "INR",
+            "baggage_included": true,
+            "source_name": null,
+            "source_url": null,
+            "verification_status": "UNVERIFIED"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "event": "on_chain_start",
+    "name": "recommend"
+  },
+  {
+    "event": "on_chain_end",
+    "name": "recommend",
+    "data": {
+      "output": {
+        "recommendation": "I recommend QR 573 as the cheapest option, but BA 118 is faster with fewer stops."
+      }
+    }
+  }
+]

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from langgraph.graph import StateGraph, START, END
 
 from app.agent.state import VoyageState
@@ -52,3 +54,24 @@ def build_graph():
     workflow.add_edge("recommend", END)
     
     return workflow.compile()
+
+
+def export_graph_diagram(output_path: str | Path = "voyage-graph.png") -> Path:
+    """Render the compiled Voyage graph to a Mermaid PNG diagram.
+
+    Run ``python -m app.agent.graph`` to create ``voyage-graph.png`` in the
+    project root, or call this function with a different output path.
+    """
+    path = Path(output_path)
+    if path.suffix.lower() != ".png":
+        raise ValueError("output_path must use the .png extension")
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    png_bytes = build_graph().get_graph().draw_mermaid_png()
+    path.write_bytes(png_bytes)
+    return path
+
+
+if __name__ == "__main__":
+    diagram_path = export_graph_diagram()
+    print(f"Graph diagram written to {diagram_path.resolve()}")
